@@ -65,7 +65,7 @@ public class SwitcherPanel extends ViewGroup {
     }
 
     /* switcherView's position */
-    public enum Anchor {
+    public enum Anchor { // 位置
         TOP,
         BOTTOM
     }
@@ -418,12 +418,12 @@ public class SwitcherPanel extends ViewGroup {
                 && event.getRawY() <= bottom;
     }
 
-    public void expanded() {
+    public void expanded() {  // 展开。  实际上是为了 隐藏
         smoothSlideTo(1f);
         status = Status.EXPANDED;
     }
 
-    public void collapsed() {
+    public void collapsed() { // 崩塌的意思。 但是明显是为了显示，命名有问题。
         switcherView.setEnabled(true);
         smoothSlideTo(0f);
         status = Status.COLLAPSED;
@@ -477,7 +477,7 @@ public class SwitcherPanel extends ViewGroup {
         }
 
         int top = computeTopPosition(slideOffset);
-        if (dragHelper.smoothSlideViewTo(mainView, mainView.getLeft(), top)) {
+        if (dragHelper.smoothSlideViewTo(mainView, mainView.getLeft(), top)) { // 产生变化
             ViewCompat.postInvalidateOnAnimation(this);
             return true;
         }

@@ -2,6 +2,7 @@ package io.github.mthli.Ninja.View;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
@@ -11,6 +12,8 @@ import io.github.mthli.Ninja.Browser.BrowserController;
 import io.github.mthli.Ninja.R;
 
 public class Album {
+
+    private final static String TAG = "Album";
     private Context context;
 
     private View albumView;
@@ -70,6 +73,7 @@ public class Album {
         albumView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Log.v(TAG, "albumView onClick");
                 browserController.showAlbum(albumController, false, false, false);
             }
         });

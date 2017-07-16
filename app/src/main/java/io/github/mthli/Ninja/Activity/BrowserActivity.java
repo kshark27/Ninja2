@@ -24,6 +24,7 @@ import android.text.Html;
 import android.text.InputType;
 import android.text.TextWatcher;
 import android.text.method.KeyListener;
+import android.util.Log;
 import android.view.*;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
@@ -54,6 +55,9 @@ import java.util.*;
 
 public class BrowserActivity extends Activity implements BrowserController {
     // Sync with NinjaToast.show() 2000ms delay
+
+    private static final String TAG = "BrowserActivity";
+
     private static final int DOUBLE_TAPS_QUIT_DEFAULT = 2000;
 
     private SwitcherPanel switcherPanel;
@@ -133,11 +137,11 @@ public class BrowserActivity extends Activity implements BrowserController {
         }
 
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
-        anchor = Integer.valueOf(sp.getString(getString(R.string.sp_anchor), "1"));
+        anchor = Integer.valueOf(sp.getString(getString(R.string.sp_anchor), "0"));
         if (anchor == 0) {
-            setContentView(R.layout.main_top);
+            setContentView(R.layout.main_top); // 网址输入框在上方
         } else {
-            setContentView(R.layout.main_bottom);
+            setContentView(R.layout.main_bottom);  // 网址输入框在下方
         }
 
         create = true;
@@ -147,13 +151,18 @@ public class BrowserActivity extends Activity implements BrowserController {
         switcherPanel = (SwitcherPanel) findViewById(R.id.switcher_panel);
         switcherPanel.setStatusListener(new SwitcherPanel.StatusListener() {
             @Override
-            public void onFling() {}
+            public void onFling() {
+                Log.v(TAG, "switcherPanel onFling");
+            }
 
             @Override
-            public void onExpanded() {}
+            public void onExpanded() {
+                Log.v(TAG, "switcherPanel onExpanded");
+            }
 
             @Override
             public void onCollapsed() {
+                Log.v(TAG, "switcherPanel onCollapsed");
                 inputBox.clearFocus();
             }
         });
@@ -368,6 +377,7 @@ public class BrowserActivity extends Activity implements BrowserController {
         switcherHistory = (ImageButton) findViewById(R.id.switcher_history);
         switcherAdd = (ImageButton) findViewById(R.id.switcher_add);
 
+        // “设置”
         switcherSetting.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -375,14 +385,14 @@ public class BrowserActivity extends Activity implements BrowserController {
                 startActivity(intent);
             }
         });
-
+        // “书签”
         switcherBookmarks.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 addAlbum(BrowserUnit.FLAG_BOOKMARKS);
             }
         });
-
+        // “历史”
         switcherHistory.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -390,6 +400,7 @@ public class BrowserActivity extends Activity implements BrowserController {
             }
         });
 
+        // “添加新标签页”
         switcherAdd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -635,7 +646,7 @@ public class BrowserActivity extends Activity implements BrowserController {
 
     private void initSearchPanel() {
         searchPanel = (RelativeLayout) findViewById(R.id.main_search_panel);
-        searchBox = (EditText) findViewById(R.id.main_search_box);
+        searchBox = (EditText) findViewById(R.id.main_search_box); // 搜索框
         searchUp = (ImageButton) findViewById(R.id.main_search_up);
         searchDown = (ImageButton) findViewById(R.id.main_search_down);
         searchCancel = (ImageButton) findViewById(R.id.main_search_cancel);
@@ -660,11 +671,11 @@ public class BrowserActivity extends Activity implements BrowserController {
         searchBox.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if (actionId != EditorInfo.IME_ACTION_DONE) {
+                if (actionId != EditorInfo.IME_ACTION_DONE) { // 输入法点击“完成”
                     return false;
                 }
 
-                if (searchBox.getText().toString().isEmpty()) {
+                if (searchBox.getText().toString().isEmpty()) { // 提示未输入
                     NinjaToast.show(BrowserActivity.this, R.string.toast_input_empty);
                     return true;
                 }
@@ -767,15 +778,18 @@ public class BrowserActivity extends Activity implements BrowserController {
         albumView.startAnimation(animation);
     }
 
+    // 添加标签页
     private synchronized void addAlbum(String title, final String url, final boolean foreground, final Message resultMsg) {
         final NinjaWebView webView = new NinjaWebView(this);
         webView.setBrowserController(this);
         webView.setFlag(BrowserUnit.FLAG_NINJA);
-        webView.setAlbumCover(ViewUnit.capture(webView, dimen144dp, dimen108dp, false, Bitmap.Config.RGB_565));
+        webView.setAlbumCover(ViewUnit.capture(webView, dimen144dp, dimen108dp, false, Bitmap.Config.RGB_565)); // 生成缩略图
         webView.setAlbumTitle(title);
         ViewUnit.bound(this, webView);
 
         final View albumView = webView.getAlbumView();
+
+        // 放在标签页列表的最后面
         if (currentAlbumController != null && (currentAlbumController instanceof NinjaWebView) && resultMsg != null) {
             int index = BrowserContainer.indexOf(currentAlbumController) + 1;
             BrowserContainer.add(webView, index);
@@ -785,7 +799,7 @@ public class BrowserActivity extends Activity implements BrowserController {
             switcherContainer.addView(albumView, LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         }
 
-        if (!foreground) {
+        if (!foreground) { // 不是最前面的先加载？
             ViewUnit.bound(this, webView);
             webView.loadUrl(url);
             webView.deactivate();
@@ -797,6 +811,7 @@ public class BrowserActivity extends Activity implements BrowserController {
             return;
         }
 
+        // 要显示该网页的话
         albumView.setVisibility(View.INVISIBLE);
         Animation animation = AnimationUtils.loadAnimation(this, R.anim.album_slide_in_up);
         animation.setAnimationListener(new Animation.AnimationListener() {
@@ -896,9 +911,11 @@ public class BrowserActivity extends Activity implements BrowserController {
         }
     }
 
+    // 点击某个标签页后，调用。点击事件在Album中定义.
+    // 第1次点击是将焦点放在当前album上，第2次则是隐藏标签页列表
     @Override
     public synchronized void showAlbum(AlbumController controller, boolean anim, final boolean expand, final boolean capture) {
-        if (controller == null || controller == currentAlbumController) {
+        if (controller == null || controller == currentAlbumController) { // 第2次，或者点击原标签页
             switcherPanel.expanded();
             return;
         }
@@ -919,7 +936,7 @@ public class BrowserActivity extends Activity implements BrowserController {
                 @Override
                 public void onAnimationStart(Animation animation) {
                     contentFrame.removeAllViews();
-                    contentFrame.addView(av);
+                    contentFrame.addView(av); // 显示当前选中的网页
                 }
             });
             rv.startAnimation(fadeOut);
@@ -954,6 +971,7 @@ public class BrowserActivity extends Activity implements BrowserController {
             return;
         }
 
+        // 这个layout是HOME，展示时会放在contentframe里
         NinjaRelativeLayout layout = (NinjaRelativeLayout) getLayoutInflater().inflate(R.layout.home, null, false);
         layout.setBrowserController(this);
         layout.setFlag(BrowserUnit.FLAG_HOME);
@@ -1030,6 +1048,7 @@ public class BrowserActivity extends Activity implements BrowserController {
         }
     }
 
+    // 根据历史和输入的内容进行补全提示
     @Override
     public void updateAutoComplete() {
         RecordAction action = new RecordAction(this);
